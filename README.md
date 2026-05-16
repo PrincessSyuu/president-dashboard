@@ -1,4 +1,4 @@
-# President University — Admin Dashboard (M2IR / M2IT)
+# President University — Admin Dashboard (M2IR / M2IT) By Elbert
 
 Demo dashboard + alur QR → *Mind To Major* → Admin Analytics.
 
