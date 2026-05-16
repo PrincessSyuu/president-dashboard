@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mind To Major — Submission</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0e1a;
+      --card:#161d2e;
+      --border:#1e2a3f;
+      --text:#e8ecf4;
+      --muted:#7a8ba7;
+      --blue:#2563eb;
+      --purple:#7c3aed;
+      --green:#22c55e;
+      --danger:#ef4444;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+    .wrap{width:100%;max-width:920px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 16px 60px rgba(0,0,0,.35);overflow:hidden}
+    .header{padding:22px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .title{display:flex;flex-direction:column;gap:6px}
+    h1{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:800}
+    p{color:var(--muted);font-size:13px;line-height:1.4}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.03);color:var(--muted);font-weight:700;font-size:12px}
+    .content{padding:22px 24px;display:grid;grid-template-columns:1fr 340px;gap:16px}
+    @media(max-width:860px){.content{grid-template-columns:1fr}}
+
+    .field{margin-bottom:14px}
+    .label{display:block;font-size:12px;font-weight:800;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+    input[type="text"],input[type="number"],select{width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(10,14,26,.3);color:var(--text);outline:none}
+    input::placeholder{color:rgba(122,139,167,.7)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-weight:800;cursor:pointer;transition:transform .15s ease, border-color .2s ease, background .2s ease}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18)}
+    .btn.primary{background:var(--blue);border-color:rgba(37,99,235,.35);color:#0a0e1a}
+    .btn.danger{border-color:rgba(239,68,68,.35);color:var(--danger)}
+    .side{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px}
+    .side h2{font-size:14px;font-weight:900;margin-bottom:10px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
+    .value{font-weight:900}
+    .muted{color:var(--muted);font-size:13px}
+    .toast{position:fixed;right:16px;top:16px;background:var(--card);border:1px solid var(--border);padding:12px 14px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.35);display:none;z-index:999}
+
+    .badge{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+    .badge.m2ir{border-color:rgba(124,58,237,.35);color:var(--purple);background:rgba(124,58,237,.12)}
+    .badge.m2it{border-color:rgba(34,197,94,.35);color:var(--green);background:rgba(34,197,94,.12)}
+
+    .small{font-size:12px;color:var(--muted);line-height:1.4}
+    .divider{height:1px;background:var(--border);margin:14px 0}
+
+    /* Firebase widgets */
+    .login-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <div class="title">
+          <h1>Mind To Major</h1>
+          <p>Demo MVP: scan QR → halaman ini → login Google → isi poin → hasil ditulis ke Firestore.</p>
+        </div>
+        <div class="pill" title="QR token">Token: <span id="tokenView">-</span></div>
+      </div>
+
+      <div class="content">
+        <div>
+          <div id="authArea">
+            <div class="field">
+              <span class="label">Login Google</span>
+              <div class="small">Admin hanya akan melihat data setelah ditulis ke Firestore.</div>
+              <div class="login-actions">
+                <button class="btn primary" id="btnGoogle"><i class="fa-brands fa-google"></i> Login dengan Google</button>
+                <button class="btn danger" id="btnSignOut" style="display:none"><i class="fas fa-right-from-bracket"></i> Sign out</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="formArea" style="display:none">
+            <div class="field">
+              <span class="label">Email (dari Google)</span>
+              <input type="text" id="emailView" readonly />
+            </div>
+            <div class="field">
+              <span class="label">Points</span>
+              <input type="number" id="pointsInput" min="0" step="1" placeholder="Masukkan poin" />
+            </div>
+
+            <div class="field">
+              <span class="label">Hasil otomatis</span>
+              <div id="resultView" class="small">Masukkan poin untuk melihat rekomendasi.</div>
+              <div style="margin-top:10px" id="recommendBadgeWrap"></div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="login-actions">
+              <button class="btn primary" id="btnSubmit"><i class="fas fa-paper-plane"></i> Submit ke Admin</button>
+            </div>
+            <div class="small" style="margin-top:10px">
+              Rule demo: <b>points > 10</b> ⇒ <b>role: Social ⇒ M2IR</b>, selain itu ⇒ <b>M2IT</b>.
+            </div>
+          </div>
+        </div>
+
+        <div class="side">
+          <h2>Ringkasan</h2>
+          <div class="row"><span class="muted">Recommendation result</span><span class="value" id="recResult">-</span></div>
+          <div class="row"><span class="muted">Latest submission</span><span class="value" id="latestSub">-</span></div>
+          <div class="divider"></div>
+          <div class="small">
+            QR token dipakai sebagai document id di Firestore.
+          </div>
+          <div class="small" style="margin-top:10px">
+            Pastikan Firebase config sesuai project.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase SDK (modular) -->
+  <script type="module">
+    // ======== 1) TEMPEL FIREBASE CONFIG di bawah ========
+    const firebaseConfig = {
+      // TODO: isi dari Firebase Console
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // ======== 2) IMPORT FIREBASE SDK ========
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+    import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+
+    // ======== 3) INIT ========
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || 'demo-token';
+
+    const tokenView = document.getElementById('tokenView');
+    tokenView.textContent = token;
+
+    const emailView = document.getElementById('emailView');
+    const formArea = document.getElementById('formArea');
+    const authArea = document.getElementById('authArea');
+
+    const btnGoogle = document.getElementById('btnGoogle');
+    const btnSignOut = document.getElementById('btnSignOut');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    const pointsInput = document.getElementById('pointsInput');
+    const resultView = document.getElementById('resultView');
+    const recResult = document.getElementById('recResult');
+    const latestSub = document.getElementById('latestSub');
+    const recommendBadgeWrap = document.getElementById('recommendBadgeWrap');
+
+    const toast = document.getElementById('toast');
+    const showToast = (msg) => {
+      toast.style.display = 'block';
+      toast.textContent = msg;
+      setTimeout(() => toast.style.display = 'none', 3200);
+    }
+
+    function deriveRole(points){
+      const pts = Number(points || 0);
+      // Rule dari user:
+      // points > 10 => role Social => ngarah ke M2IR
+      return pts > 10 ? 'M2IR' : 'M2IT';
+    }
+
+    function renderRecommendation(points){
+      const role = deriveRole(points);
+      recResult.textContent = role;
+      if(role === 'M2IR'){
+        recommendBadgeWrap.innerHTML = '<span class="badge m2ir">M2IR (Hubungan Internasional)</span>';
+      } else {
+        recommendBadgeWrap.innerHTML = '<span class="badge m2it">M2IT (Teknologi Informasi)</span>';
+      }
+      const pts = Number(points || 0);
+      resultView.textContent = `Points Anda: ${pts}. Rule demo: ${pts} ${pts>10?'> 10':'≤ 10'} ⇒ ${role}.`;
+      return role;
+    }
+
+    pointsInput.addEventListener('input', () => {
+      renderRecommendation(pointsInput.value);
+    });
+
+    btnGoogle.addEventListener('click', async () => {
+      try{
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      }catch(e){
+        console.error(e);
+        showToast('Login gagal. Cek config Firebase/Internet.');
+      }
+    });
+
+    btnSignOut.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if(user){
+        authArea.style.display = 'none';
+        formArea.style.display = 'block';
+        btnSignOut.style.display = 'inline-flex';
+        emailView.value = user.email || '-';
+        renderRecommendation(pointsInput.value);
+      } else {
+        authArea.style.display = 'block';
+        formArea.style.display = 'none';
+        btnSignOut.style.display = 'none';
+        recResult.textContent = '-';
+        latestSub.textContent = '-';
+        recommendBadgeWrap.innerHTML = '';
+        resultView.textContent = 'Masukkan poin untuk melihat rekomendasi.';
+      }
+    });
+
+    btnSubmit.addEventListener('click', async () => {
+      try{
+        const user = auth.currentUser;
+        if(!user) return showToast('Login dulu dengan Google.');
+
+        const points = Number(pointsInput.value);
+        if(Number.isNaN(points)) return showToast('Masukkan poin yang valid.');
+
+        const role = deriveRole(points);
+
+        const payload = {
+          email: user.email,
+          points,
+          role,
+          recommendationResult: role,
+          latestSubmission: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(doc(db, 'submissions', token), payload, { merge: true });
+        latestSub.textContent = new Date().toLocaleString('id-ID');
+        showToast('Data berhasil dikirim ke Admin dashboard (Firestore).');
+      }catch(e){
+        console.error(e);
+        showToast('Submit gagal. Cek Firestore rules/config.');
+      }
+    });
+  </script>
+</body>
+</html>
+

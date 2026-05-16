@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — President University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #161d2e;
+            --bg-card-hover: #1c2540;
+            --accent: #00e5a0;
+            --accent-dim: rgba(0,229,160,0.15);
+            --accent-secondary: #f59e0b;
+            --text-primary: #e8ecf4;
+            --text-secondary: #7a8ba7;
+            --border: #1e2a3f;
+            --danger: #ef4444;
+            --info: #38bdf8;
+            --pu-red: #C8102E;
+            --pu-blue: #003366;
+            --m2ir: #f472b6;
+            --m2ir-dim: rgba(244,114,182,0.15);
+            --m2it: #a78bfa;
+            --m2it-dim: rgba(167,139,250,0.15);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1,h2,h3,h4,h5 { font-family: 'Space Grotesk', sans-serif; }
+
+        /* ===== LOADING SCREEN ===== */
+        .loading-screen {
+            position:fixed;inset:0;z-index:9999;background:#050810;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            transition:opacity .8s ease,visibility .8s ease;
+        }
+        .loading-screen.hidden { opacity:0;visibility:hidden;pointer-events:none; }
+        .loading-bg { position:absolute;inset:0;overflow:hidden; }
+        .loading-particle { position:absolute;border-radius:50%;opacity:0;animation:floatP linear infinite; }
+        @keyframes floatP {
+            0%{transform:translateY(100vh) scale(0);opacity:0}
+            10%{opacity:1} 90%{opacity:1}
+            100%{transform:translateY(-10vh) scale(1);opacity:0}
+        }
+        .loading-glow {
+            position:absolute;width:500px;height:500px;border-radius:50%;
+            background:radial-gradient(circle,rgba(200,16,46,0.08) 0%,rgba(0,51,102,0.06) 40%,transparent 70%);
+            animation:pulseG 3s ease-in-out infinite;
+        }
+        @keyframes pulseG { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.15);opacity:1} }
+        .loading-ring-outer {
+            position:absolute;width:260px;height:260px;border-radius:50%;
+            border:1px solid rgba(200,16,46,0.1);animation:spinR 20s linear infinite;
+        }
+        .loading-ring-outer::before {
+            content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;
+            background:var(--pu-red);border-radius:50%;box-shadow:0 0 12px var(--pu-red);
+        }
+        @keyframes spinR { to{transform:rotate(360deg)} }
+        .loading-ring-inner {
+            position:absolute;width:200px;height:200px;border-radius:50%;
+            border:1px solid rgba(0,51,102,0.12);animation:spinR 15s linear infinite reverse;
+        }
+        .loading-ring-inner::before {
+            content:'';position:absolute;bottom:-3px;right:20%;width:5px;height:5px;
+            background:var(--pu-blue);border-radius:50%;box-shadow:0 0 10px rgba(0,51,102,0.8);
+        }
+        .loading-logo-container {
+            position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+            animation:logoEnter 1.2s ease forwards;opacity:0;
+        }
+        @keyframes logoEnter { 0%{opacity:0;transform:translateY(30px) scale(.9)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        .loading-logo-img {
+            width: 120px;
+            height: auto;
+            object-fit: contain;
+            animation: logoBreath 2.5s ease-in-out infinite;
+        }
+        @keyframes logoBreath {
+            0%,100%{filter:drop-shadow(0 0 25px rgba(200,16,46,0.3)) drop-shadow(0 0 50px rgba(0,51,102,0.2))}
+            50%{filter:drop-shadow(0 0 40px rgba(200,16,46,0.5)) drop-shadow(0 0 70px rgba(0,51,102,0.35))}
+        }
+        .loading-school-name {
+            margin-top:28px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;
+            letter-spacing:6px;text-transform:uppercase;
+            background:linear-gradient(135deg,var(--pu-red) 0%,#e8354a 40%,var(--pu-blue) 70%,#1a5c99 100%);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            background-size:200% 200%;animation:textShimmer 3s ease-in-out infinite;
+        }
+        @keyframes textShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        .loading-subtitle {
+            margin-top:8px;font-size:13px;letter-spacing:4px;text-transform:uppercase;
+            color:var(--text-secondary);opacity:0;animation:fadeInL .6s ease .8s forwards;
+        }
+        @keyframes fadeInL { to{opacity:1} }
+        .loading-bar-container {
+            position:relative;z-index:2;margin-top:48px;width:320px;
+            opacity:0;animation:fadeInL .6s ease 1s forwards;
+        }
+        .loading-bar-track {
+            width:100%;height:4px;background:rgba(255,255,255,0.06);
+            border-radius:2px;overflow:hidden;position:relative;
+        }
+        .loading-bar-fill {
+            height:100%;width:0%;border-radius:2px;
+            background:linear-gradient(90deg,var(--pu-red),#e8354a,var(--pu-blue));
+            background-size:200% 100%;animation:barG 2s linear infinite;
+            transition:width .15s ease;position:relative;
+        }
+        .loading-bar-fill::after {
+            content:'';position:absolute;right:0;top:-3px;width:10px;height:10px;
+            background:white;border-radius:50%;
+            box-shadow:0 0 16px rgba(200,16,46,0.6),0 0 30px rgba(0,51,102,0.4);
+        }
+        @keyframes barG { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+        .loading-bar-reflection { width:100%;height:20px;margin-top:2px;border-radius:0 0 10px 10px;filter:blur(4px); }
+        .loading-percent {
+            margin-top:14px;font-family:'Space Grotesk',sans-serif;font-size:14px;
+            font-weight:600;color:var(--text-secondary);text-align:center;letter-spacing:2px;
+        }
+        .loading-status {
+            margin-top:8px;font-size:11px;color:rgba(122,139,167,0.6);
+            text-align:center;letter-spacing:1px;min-height:16px;transition:opacity .2s;
+        }
+        .corner-deco {
+            position:absolute;width:60px;height:60px;border-color:rgba(200,16,46,0.15);
+            border-style:solid;border-width:0;z-index:1;
+        }
+        .corner-deco.tl{top:40px;left:40px;border-top-width:1px;border-left-width:1px}
+        .corner-deco.tr{top:40px;right:40px;border-top-width:1px;border-right-width:1px}
+        .corner-deco.bl{bottom:40px;left:40px;border-bottom-width:1px;border-left-width:1px}
+        .corner-deco.br{bottom:40px;right:40px;border-bottom-width:1px;border-right-width:1px}
+        .h-line{position:absolute;height:1px;z-index:1;background:linear-gradient(90deg,transparent,rgba(200,16,46,0.1),transparent)}
+        .h-line.top{top:100px;left:10%;right:10%}
+        .h-line.bottom{bottom:100px;left:10%;right:10%}
+
+        /* ===== DASHBOARD ===== */
+        .bg-glow{position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,160,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+        .bg-glow-2{position:fixed;bottom:-300px;right:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(245,158,11,0.04) 0%,transparent 70%);pointer-events:none;z-index:0}
+        ::-webkit-scrollbar{width:6px}
+        ::-webkit-scrollbar-track{background:var(--bg-primary)}
+        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+        .sidebar{position:fixed;top:0;left:0;width:260px;height:100vh;background:var(--bg-secondary);border-right:1px solid var(--border);z-index:50;transition:transform .3s ease;display:flex;flex-direction:column}
+        .sidebar-logo{padding:24px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .sidebar-logo-img{width:40px;height:auto;object-fit:contain;border-radius:10px}
+        .sidebar-nav{padding:16px 12px;flex:1;overflow-y:auto}
+        .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-secondary);padding:12px 12px 8px;font-weight:600}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:var(--text-secondary);cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;margin-bottom:2px}
+        .nav-item:hover{background:var(--bg-card);color:var(--text-primary)}
+        .nav-item.active{background:var(--accent-dim);color:var(--accent)}
+        .nav-item i{width:20px;text-align:center;font-size:15px}
+
+        .main-content{margin-left:260px;min-height:100vh;position:relative;z-index:1}
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(10,14,26,0.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:40}
+        .topbar-left{display:flex;align-items:center;gap:16px}
+        .topbar-right{display:flex;align-items:center;gap:16px}
+        .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;min-width:260px;transition:border-color .2s}
+        .search-box:focus-within{border-color:var(--accent)}
+        .search-box input{background:transparent;border:none;outline:none;color:var(--text-primary);font-size:13px;width:100%;font-family:'DM Sans',sans-serif}
+        .search-box input::placeholder{color:var(--text-secondary)}
+        .search-box i{color:var(--text-secondary);font-size:14px}
+        .notif-btn{width:38px;height:38px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all .2s;position:relative}
+        .notif-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .notif-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+        .avatar-btn{width:38px;height:38px;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid var(--border);transition:border-color .2s}
+        .avatar-btn:hover{border-color:var(--accent)}
+        .avatar-btn img{width:100%;height:100%;object-fit:cover}
+        .page-content{padding:28px 32px}
+
+        .quick-access{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+        .qa-tab{display:flex;align-items:center;gap:10px;padding:12px 22px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;transition:all .25s;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);position:relative;overflow:hidden}
+        .qa-tab:hover{border-color:rgba(255,255,255,0.1);color:var(--text-primary);transform:translateY(-1px)}
+        .qa-tab.active-general{background:var(--accent-dim);border-color:rgba(0,229,160,0.3);color:var(--accent)}
+        .qa-tab.active-m2ir{background:var(--m2ir-dim);border-color:rgba(244,114,182,0.3);color:var(--m2ir)}
+        .qa-tab.active-m2it{background:var(--m2it-dim);border-color:rgba(167,139,250,0.3);color:var(--m2it)}
+        .qa-tab .qa-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+        .qa-tab .qa-icon.gen{background:var(--accent-dim);color:var(--accent)}
+        .qa-tab .qa-icon.m2ir{background:var(--m2ir-dim);color:var(--m2ir)}
+        .qa-tab .qa-icon.m2it{background:var(--m2it-dim);color:var(--m2it)}
+        .qa-tab.active-general .qa-icon.gen{background:var(--accent);color:#0a0e1a}
+        .qa-tab.active-m2ir .qa-icon.m2ir{background:var(--m2ir);color:#0a0e1a}
+        .qa-tab.active-m2it .qa-icon.m2it{background:var(--m2it);color:#0a0e1a}
+        .qa-count{margin-left:4px;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700}
+        .qa-tab.active-general .qa-count{background:var(--accent);color:#0a0e1a}
+        .qa-tab.active-m2ir .qa-count{background:var(--m2ir);color:#0a0e1a}
+        .qa-tab.active-m2it .qa-count{background:var(--m2it);color:#0a0e1a}
+        .qa-tab:not([class*="active-"]) .qa-count{background:var(--bg-primary);color:var(--text-secondary)}
+
+        .dept-banner{border-radius:14px;padding:20px 24px;margin-bottom:24px;border:1px solid var(--border);position:relative;overflow:hidden;transition:all .3s}
+        .dept-banner.general-banner{background:linear-gradient(135deg,rgba(0,229,160,0.08),rgba(0,184,128,0.04));border-color:rgba(0,229,160,0.15)}
+        .dept-banner.m2ir-banner{background:linear-gradient(135deg,rgba(244,114,182,0.08),rgba(168,85,145,0.04));border-color:rgba(244,114,182,0.15)}
+        .dept-banner.m2it-banner{background:linear-gradient(135deg,rgba(167,139,250,0.08),rgba(124,58,237,0.04));border-color:rgba(167,139,250,0.15)}
+        .dept-banner-title{font-size:18px;font-weight:700;margin-bottom:4px}
+        .dept-banner-desc{font-size:13px;color:var(--text-secondary)}
+
+        .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;transition:all .25s;position:relative;overflow:hidden}
+        .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;opacity:0;transition:opacity .25s}
+        .stat-card:hover{border-color:rgba(0,229,160,0.3);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+        .stat-card:hover::before{opacity:1}
+        .stat-card.green::before{background:linear-gradient(90deg,var(--accent),#00b880)}
+        .stat-card.amber::before{background:linear-gradient(90deg,var(--accent-secondary),#d97706)}
+        .stat-card.blue::before{background:linear-gradient(90deg,var(--info),#0284c7)}
+        .stat-card.red::before{background:linear-gradient(90deg,var(--danger),#dc2626)}
+        .stat-card.pink::before{background:linear-gradient(90deg,var(--m2ir),#ec4899)}
+        .stat-card.purple::before{background:linear-gradient(90deg,var(--m2it),#7c3aed)}
+        .stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:16px}
+        .stat-icon.green{background:var(--accent-dim);color:var(--accent)}
+        .stat-icon.amber{background:rgba(245,158,11,0.15);color:var(--accent-secondary)}
+        .stat-icon.blue{background:rgba(56,189,248,0.15);color:var(--info)}
+        .stat-icon.red{background:rgba(239,68,68,0.15);color:var(--danger)}
+        .stat-icon.pink{background:var(--m2ir-dim);color:var(--m2ir)}
+        .stat-icon.purple{background:var(--m2it-dim);color:var(--m2it)}
+        .stat-value{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;line-height:1;margin-bottom:4px}
+        .stat-label{font-size:13px;color:var(--text-secondary);font-weight:500}
+        .stat-change{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;margin-top:10px;padding:3px 8px;border-radius:6px}
+        .stat-change.up{background:rgba(0,229,160,0.12);color:var(--accent)}
+        .stat-change.down{background:rgba(239,68,68,0.12);color:var(--danger)}
+
+        .chart-container{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px}
+        .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+        .chart-tabs{display:flex;background:var(--bg-primary);border-radius:8px;padding:3px;gap:2px}
+        .chart-tab{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:'DM Sans',sans-serif}
+        .chart-tab.active{background:var(--accent);color:#0a0e1a}
+        .chart-tab:hover:not(.active){color:var(--text-primary)}
+        .btn-export{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg-primary);border:1px solid var(--border);color:var(--text-secondary);transition:all .2s;font-family:'DM Sans',sans-serif}
+        .btn-export:hover{border-color:var(--accent);color:var(--accent)}
+
+        .table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+        .table-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+        .table-search{display:flex;align-items:center;gap:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:220px;transition:border-color .2s}
+        .table-search:focus-within{border-color:var(--accent)}
+        .table-search input{background:transparent;border:none;outline:none;color:var(--text-primary);font-size:13px;width:100%;font-family:'DM Sans',sans-serif}
+        .table-search input::placeholder{color:var(--text-secondary)}
+        .table-search i{color:var(--text-secondary);font-size:13px}
+        .btn-add{display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);border:none;color:#0a0e1a;transition:all .2s;font-family:'DM Sans',sans-serif}
+        .btn-add:hover{background:#00cc8e;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,160,0.3)}
+
+        table{width:100%;border-collapse:collapse}
+        thead th{text-align:left;padding:14px 20px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:600;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);white-space:nowrap}
+        tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+        tbody tr:last-child{border-bottom:none}
+        tbody tr:hover{background:var(--bg-card-hover)}
+        tbody td{padding:14px 20px;font-size:13px;vertical-align:middle}
+        .user-cell{display:flex;align-items:center;gap:12px}
+        .user-avatar{width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid var(--border)}
+        .user-name{font-weight:600;color:var(--text-primary)}
+        .user-email{font-size:12px;color:var(--text-secondary);margin-top:1px}
+        .badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600}
+        .badge-green{background:rgba(0,229,160,0.12);color:var(--accent)}
+        .badge-amber{background:rgba(245,158,11,0.12);color:var(--accent-secondary)}
+        .badge-blue{background:rgba(56,189,248,0.12);color:var(--info)}
+        .badge-red{background:rgba(239,68,68,0.12);color:var(--danger)}
+        .badge-pink{background:var(--m2ir-dim);color:var(--m2ir)}
+        .badge-purple{background:var(--m2it-dim);color:var(--m2it)}
+        .action-btn{width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-secondary);transition:all .2s;font-size:13px}
+        .action-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .action-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+        .pagination{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-top:1px solid var(--border);flex-wrap:wrap;gap:12px}
+        .pagination-info{font-size:13px;color:var(--text-secondary)}
+        .pagination-btns{display:flex;gap:4px}
+        .page-btn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;font-family:'DM Sans',sans-serif}
+        .page-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .page-btn.active{background:var(--accent);border-color:var(--accent);color:#0a0e1a;font-weight:700}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+        .modal-overlay.show{display:flex}
+        .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;padding:28px;animation:modalIn .25s ease}
+        @keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)}}
+        .modal-title{font-size:20px;font-weight:700;margin-bottom:20px}
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+        .form-input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;font-family:'DM Sans',sans-serif;transition:border-color .2s;outline:none}
+        .form-input:focus{border-color:var(--accent)}
+        .form-input::placeholder{color:var(--text-secondary)}
+        .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+        .btn-cancel{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text-secondary);transition:all .2s;font-family:'DM Sans',sans-serif}
+        .btn-cancel:hover{border-color:var(--text-primary);color:var(--text-primary)}
+        .btn-submit{padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);border:none;color:#0a0e1a;transition:all .2s;font-family:'DM Sans',sans-serif}
+        .btn-submit:hover{background:#00cc8e}
+        .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+        .toast{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards;box-shadow:0 8px 30px rgba(0,0,0,0.4);min-width:260px}
+        .toast.success{border-left:3px solid var(--accent)}
+        .toast.error{border-left:3px solid var(--danger)}
+        .toast.success i{color:var(--accent)}
+        .toast.error i{color:var(--danger)}
+        @keyframes toastIn{from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)}}
+        @keyframes toastOut{from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(40px)}}
+        .hamburger{display:none;width:38px;height:38px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);font-size:16px}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)}}
+        .animate-in{animation:fadeInUp .5s ease forwards;opacity:0}
+        .program-pills{display:flex;gap:4px;flex-wrap:wrap}
+        .program-pill{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:0.5px}
+        .match-bar{height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;margin-top:6px}
+        .match-fill{height:100%;border-radius:3px;transition:width .8s ease}
+        @media(max-width:1024px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.hamburger{display:flex}}
+        @media(max-width:768px){.page-content{padding:20px 16px}.topbar{padding:12px 16px}.search-box{min-width:160px}.stat-value{font-size:24px}.loading-school-name{font-size:22px;letter-spacing:3px}.loading-bar-container{width:260px}.qa-tab{padding:10px 16px;font-size:13px}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+    </style>
+</head>
+<body>
+
+<!-- ===== LOADING SCREEN ===== -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="loading-bg" id="loadingBg"></div>
+    <div class="loading-glow"></div>
+    <div class="loading-ring-outer"></div>
+    <div class="loading-ring-inner"></div>
+    <div class="corner-deco tl"></div><div class="corner-deco tr"></div>
+    <div class="corner-deco bl"></div><div class="corner-deco br"></div>
+    <div class="h-line top"></div><div class="h-line bottom"></div>
+
+    <div class="loading-logo-container">
+        <!--
+            LOGO FALLBACK CHAIN:
+            1. ChatGLM URL (yang kamu kasih — akan expired)
+            2. President.ac.id official logo
+            3. Wikipedia SVG
+            4. Inline SVG (paling aman, never fails)
+
+            TIP: Download gambarnya, simpan sebagai "logo.png" di folder yang sama,
+            lalu ganti src di bawah jadi src="logo.png"
+        -->
+        <img
+            class="loading-logo-img"
+            id="loadingLogo"
+            alt="President University Logo"
+            src="https://z-cdn-media.chatglm.cn/files/695ba4a0-f9fd-420c-8b0e-0fe7f140738a.png?auth_key=1878896001-26113c0931a040da805ee4ea770761d8-0-36d6c44024a3866d6b82a1becffc91f5"
+            onerror="handleLogoError(this)"
+        >
+        <div class="loading-school-name">President University</div>
+        <div class="loading-subtitle">Admin Dashboard System</div>
+    </div>
+
+    <div class="loading-bar-container">
+        <div class="loading-bar-track"><div class="loading-bar-fill" id="loadingBarFill"></div></div>
+        <div class="loading-bar-reflection" id="barReflection"></div>
+        <div class="loading-percent" id="loadingPercent">0%</div>
+        <div class="loading-status" id="loadingStatus">Memuat konfigurasi sistem...</div>
+    </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <img
+            class="sidebar-logo-img"
+            id="sidebarLogo"
+            alt="PU Logo"
+            src="https://z-cdn-media.chatglm.cn/files/695ba4a0-f9fd-420c-8b0e-0fe7f140738a.png?auth_key=1878896001-26113c0931a040da805ee4ea770761d8-0-36d6c44024a3866d6b82a1becffc91f5"
+            onerror="handleSidebarLogoError(this)"
+        >
+        <div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;">President Univ</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Admin Dashboard</div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-label">Menu Utama</div>
+        <div class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</div>
+        <div class="nav-item"><i class="fas fa-users"></i> Data Pengguna</div>
+        <div class="nav-item"><i class="fas fa-chart-bar"></i> Analytics</div>
+        <div class="nav-label">Program Studi</div>
+        <div class="nav-item" onclick="switchTab('m2ir')"><i class="fas fa-globe"></i> M2IR - HI</div>
+        <div class="nav-item" onclick="switchTab('m2it')"><i class="fas fa-industry"></i> M2IT - TI</div>
+        <div class="nav-label">Lainnya</div>
+        <div class="nav-item"><i class="fas fa-envelope"></i> Pesan</div>
+        <div class="nav-item"><i class="fas fa-cog"></i> Pengaturan</div>
+    </nav>
+    <div style="padding:16px 20px;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <img src="https://picsum.photos/seed/admin99/40/40.jpg" alt="Admin" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">
+            <div>
+                <div style="font-size:13px;font-weight:600;">Admin Utama</div>
+                <div style="font-size:11px;color:var(--text-secondary);">admin@president.ac.id</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<div class="main-content">
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="hamburger" id="hamburgerBtn" aria-label="Toggle menu"><i class="fas fa-bars"></i></div>
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Cari sesuatu..." aria-label="Search"></div>
+        </div>
+        <div class="topbar-right">
+            <div class="notif-btn" aria-label="Notifikasi"><i class="fas fa-bell"></i><span class="notif-badge">3</span></div>
+            <div class="avatar-btn" aria-label="Profil"><img src="https://picsum.photos/seed/admin99/40/40.jpg" alt="Admin avatar"></div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <div class="animate-in" style="margin-bottom:20px;animation-delay:0s;">
+            <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">Admin Dashboard</h1>
+            <p style="color:var(--text-secondary);font-size:14px;">Analytics Overview — President University</p>
+        </div>
+
+<div class="quick-access animate-in" style="animation-delay:0.05s;" id="quickAccess">
+            <div class="qa-tab active-general" id="qaGeneral" onclick="switchTab('general')">
+                <div class="qa-icon gen"><i class="fas fa-th-large"></i></div>
+                <div><div style="font-weight:700;">General</div><div style="font-size:11px;opacity:0.7;">Semua Data</div></div>
+                <span class="qa-count" id="qaCountGeneral">20</span>
+            </div>
+            <div class="qa-tab" id="qaM2ir" onclick="switchTab('m2ir')">
+                <div class="qa-icon m2ir"><i class="fas fa-globe"></i></div>
+                <div><div style="font-weight:700;">M2IR</div><div style="font-size:11px;opacity:0.7;">Hubungan Internasional</div></div>
+                <span class="qa-count" id="qaCountM2ir">0</span>
+            </div>
+            <div class="qa-tab" id="qaM2it" onclick="switchTab('m2it')">
+                <div class="qa-icon m2it"><i class="fas fa-industry"></i></div>
+                <div><div style="font-weight:700;">M2IT</div><div style="font-size:11px;opacity:0.7;">Teknologi Informasi</div></div>
+                <span class="qa-count" id="qaCountM2it">0</span>
+            </div>
+        </div>
+
+        <div class="dept-banner general-banner animate-in" id="deptBanner" style="animation-delay:0.1s;">
+            <div class="dept-banner-title" id="deptBannerTitle">Semua Program Studi</div>
+            <div class="dept-banner-desc" id="deptBannerDesc">Menampilkan data keseluruhan dari seluruh program dan kategori pengguna.</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;" id="statCardsGrid"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:28px;" class="chart-grid">
+            <div class="chart-container animate-in" style="animation-delay:0.3s;">
+                <div class="chart-header">
+                    <div>
+                        <h3 style="font-size:16px;font-weight:700;" id="chartTitle">Statistik Kategori</h3>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;" id="chartSubtitle">Distribusi berdasarkan tipe pengguna</p>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <div class="chart-tabs">
+                            <button class="chart-tab active" data-type="bar">BAR CHART</button>
+                            <button class="chart-tab" data-type="line">LINE CHART</button>
+                        </div>
+                        <button class="btn-export" id="exportChartCSV"><i class="fas fa-download"></i> EXPORT CSV</button>
+                    </div>
+                </div>
+                <div style="height:280px;position:relative;"><canvas id="mainChart"></canvas></div>
+            </div>
+            <div class="animate-in" style="animation-delay:0.35s;display:flex;flex-direction:column;gap:16px;" id="sideStats"></div>
+        </div>
+
+        <div class="table-container animate-in" style="animation-delay:0.4s;">
+            <div class="table-header">
+                <div>
+                    <h3 style="font-size:16px;font-weight:700;" id="tableTitle">Data Pengguna</h3>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;" id="tableSubtitle">Daftar lengkap nama, email, alamat, dan sekolah</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <div class="table-search"><i class="fas fa-search"></i><input type="text" id="tableSearch" placeholder="Cari pengguna..." aria-label="Cari pengguna"></div>
+                    <button class="btn-export" id="exportTableCSV"><i class="fas fa-download"></i> EXPORT CSV</button>
+                    <button class="btn-add" id="addUserBtn"><i class="fas fa-plus"></i> Tambah Pengguna</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>No</th><th>Nama & Email</th><th>Alamat</th><th>Sekolah</th><th>Kategori</th><th>Program</th><th>Cocok</th><th>Aksi</th></tr></thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo"></div>
+                <div class="pagination-btns" id="paginationBtns"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="addUserModal">
+    <div class="modal">
+        <h3 class="modal-title" id="modalTitle">Tambah Pengguna Baru</h3>
+        <div class="form-group"><label class="form-label">Nama Lengkap</label><input type="text" class="form-input" id="inputName" placeholder="Masukkan nama lengkap"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="inputEmail" placeholder="contoh@email.com"></div>
+        <div class="form-group"><label class="form-label">Alamat</label><input type="text" class="form-input" id="inputAddress" placeholder="Masukkan alamat lengkap"></div>
+        <div class="form-group"><label class="form-label">Sekolah</label><input type="text" class="form-input" id="inputSchool" placeholder="Nama sekolah"></div>
+        <div class="form-group"><label class="form-label">Kategori</label><select class="form-input" id="inputCategory"><option value="Analisis">Analisis</option><option value="Kreatif">Kreatif</option><option value="Praktik">Praktik</option><option value="Sosial">Sosial</option></select></div>
+        <div class="form-group"><label class="form-label">Program yang Diminati</label><div style="display:flex;gap:16px;margin-top:6px;"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="inputProgM2ir"> M2IR (Hubungan Internasional)</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="inputProgM2it"> M2IT (Teknologi Informasi)</label></div></div>
+        <div class="modal-actions"><button class="btn-cancel" id="cancelModal">Batal</button><button class="btn-submit" id="submitUser">Simpan Data</button></div>
+    </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    /* ===== LOGO FALLBACK SYSTEM ===== */
+    var logoFallbackChain = [
+        'https://president.ac.id/frontend/assets/img/logo.png',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/President_University_logo.svg/320px-President_University_logo.svg.png'
+    ];
+    var logoFallbackIndex = 0;
+    var sidebarLogoFallbackIndex = 0;
+
+    function handleLogoError(img) {
+        if (logoFallbackIndex < logoFallbackChain.length) {
+            img.src = logoFallbackChain[logoFallbackIndex];
+            logoFallbackIndex++;
+        } else {
+            // Semua URL gagal — pakai inline SVG
+            img.style.display = 'none';
+            var svgContainer = document.createElement('div');
+            svgContainer.innerHTML = '<svg width="120" height="130" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 10 L185 50 L185 130 Q185 185 100 210 Q15 185 15 130 L15 50 Z" stroke="#C8102E" stroke-width="5" fill="none"/><path d="M100 22 L175 58 L175 128 Q175 178 100 200 Q25 178 25 128 L25 58 Z" stroke="#C8102E" stroke-width="1.5" fill="rgba(200,16,46,0.04)"/><g transform="translate(100,108)"><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.85" transform="rotate(0)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.75" transform="rotate(45)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.85" transform="rotate(90)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.75" transform="rotate(135)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.85" transform="rotate(180)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.75" transform="rotate(225)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.85" transform="rotate(270)"/><ellipse cx="0" cy="-30" rx="18" ry="32" fill="#003366" opacity="0.75" transform="rotate(315)"/><circle cx="0" cy="0" r="14" fill="#C8102E"/><circle cx="0" cy="0" r="7" fill="#fff"/></g><text x="100" y="198" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="22" fill="#C8102E" letter-spacing="3">PRESIDENT</text><text x="100" y="216" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-weight="600" font-size="14" fill="#003366" letter-spacing="4">UNIVERSITY</text></svg>';
+            svgContainer.style.animation = 'logoBreath 2.5s ease-in-out infinite';
+            img.parentNode.insertBefore(svgContainer, img);
+        }
+    }
+
+    function handleSidebarLogoError(img) {
+        if (sidebarLogoFallbackIndex < logoFallbackChain.length) {
+            img.src = logoFallbackChain[sidebarLogoFallbackIndex];
+            sidebarLogoFallbackIndex++;
+        } else {
+            img.style.display = 'none';
+            var fallback = img.nextElementSibling;
+            if (fallback && fallback.classList) {
+                fallback.style.display = 'flex';
+            } else {
+                var div = document.createElement('div');
+                div.style.cssText = 'width:40px;height:40px;background:linear-gradient(135deg,#C8102E,#003366);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:white;font-family:Space Grotesk,sans-serif;';
+                div.textContent = 'PU';
+                img.parentNode.insertBefore(div, img);
+            }
+        }
+    }
+
+    /* ===== LOADING SCREEN ===== */
+    var loadingMessages = [
+        'Memuat konfigurasi sistem...',
+        'Menghubungkan ke database...',
+        'Memverifikasi akses pengguna...',
+        'Memuat data President University...',
+        'Menyiapkan analytics engine...',
+        'Mengoptimalkan performa...',
+        'Memuat komponen dashboard...',
+        'Hampir selesai, mohon tunggu...'
+    ];
+
+    (function createLoadingParticles() {
+        var bg = document.getElementById('loadingBg');
+        for (var i = 0; i < 30; i++) {
+            var p = document.createElement('div');
+            p.className = 'loading-particle';
+            var size = Math.random() * 3 + 1;
+            var isRed = Math.random() > 0.5;
+            p.style.width = size + 'px'; p.style.height = size + 'px';
+            p.style.left = (Math.random() * 100) + '%';
+            p.style.background = isRed ? 'rgba(200,16,46,0.5)' : 'rgba(0,51,102,0.5)';
+            p.style.boxShadow = '0 0 ' + (size * 3) + 'px ' + (isRed ? 'rgba(200,16,46,0.3)' : 'rgba(0,51,102,0.3)');
+            p.style.animationDuration = (Math.random() * 8 + 6) + 's';
+            p.style.animationDelay = (Math.random() * 5) + 's';
+            bg.appendChild(p);
+        }
+    })();
+
+    var loadProgress = 0;
+    var loadingBar = document.getElementById('loadingBarFill');
+    var loadingPercent = document.getElementById('loadingPercent');
+    var loadingStatus = document.getElementById('loadingStatus');
+    var barReflection = document.getElementById('barReflection');
+    var msgIndex = 0;
+    var dashboardInitialized = false;
+
+    function animateLoading() {
+        var increment;
+        if (loadProgress < 30) increment = Math.random() * 3 + 1;
+        else if (loadProgress < 60) increment = Math.random() * 2.5 + 0.5;
+        else if (loadProgress < 85) increment = Math.random() * 1.5 + 0.3;
+        else if (loadProgress < 95) increment = Math.random() * 0.8 + 0.2;
+        else increment = Math.random() * 0.5 + 0.3;
+        loadProgress = Math.min(loadProgress + increment, 100);
+        loadingBar.style.width = loadProgress + '%';
+        loadingPercent.textContent = Math.floor(loadProgress) + '%';
+        var rOp = 0.05 + (loadProgress / 100) * 0.1;
+        barReflection.style.background = 'linear-gradient(180deg, rgba(200,16,46,' + rOp + '), transparent)';
+        var newMsgIndex = Math.floor((loadProgress / 100) * loadingMessages.length);
+        if (newMsgIndex !== msgIndex && newMsgIndex < loadingMessages.length) {
+            msgIndex = newMsgIndex;
+            loadingStatus.style.opacity = '0';
+            setTimeout(function() { loadingStatus.textContent = loadingMessages[msgIndex]; loadingStatus.style.opacity = '1'; }, 200);
+        }
+        if (loadProgress >= 100) {
+            setTimeout(function() { loadingStatus.textContent = 'Selamat datang!'; loadingPercent.textContent = '100%'; }, 200);
+            setTimeout(function() {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                if (!dashboardInitialized) { dashboardInitialized = true; setTimeout(initDashboard, 400); }
+            }, 800);
+            return;
+        }
+        var delay = loadProgress < 85 ? Math.random() * 60 + 20 : Math.random() * 100 + 50;
+        setTimeout(animateLoading, delay);
+    }
+    setTimeout(animateLoading, 600);
+
+    /* ===== DATA ===== */
+    // NOTE: Dummy data awal. Data real akan ditambahkan dari Firestore.
+    var userData = [
+        { id:1, name:"Ahmad Fauzan", email:"ahmad.fauzan@president.ac.id", address:"Jl. Merdeka No. 12, Jakarta Selatan", school:"President University", category:"Sosial", status:"Aktif", programs:["m2ir"], matchM2ir:92, matchM2it:45 },
+        { id:2, name:"Siti Nurhaliza", email:"siti.nurha@president.ac.id", address:"Jl. Sudirman No. 45, Bandung", school:"SMA Negeri 5 Bandung", category:"Kreatif", status:"Aktif", programs:["m2it"], matchM2ir:38, matchM2it:85 },
+        { id:3, name:"Budi Santoso", email:"budi.santoso@president.ac.id", address:"Jl. Diponegoro No. 8, Surabaya", school:"SMK Negeri 2 Surabaya", category:"Praktik", status:"Aktif", programs:["m2it"], matchM2ir:25, matchM2it:78 },
+        { id:4, name:"Dewi Lestari", email:"dewi.lestari@president.ac.id", address:"Jl. Gatot Subroto No. 23, Yogyakarta", school:"SMA Negeri 1 Yogyakarta", category:"Sosial", status:"Aktif", programs:["m2ir","m2it"], matchM2ir:88, matchM2it:72 },
+        { id:5, name:"Rizky Pratama", email:"rizky.pratama@president.ac.id", address:"Jl. Ahmad Yani No. 56, Semarang", school:"SMA Negeri 2 Semarang", category:"Analisis", status:"Nonaktif", programs:["m2it"], matchM2ir:30, matchM2it:90 },
+        { id:6, name:"Putri Wulandari", email:"putri.wulan@president.ac.id", address:"Jl. Hayam Wuruk No. 34, Denpasar", school:"SMA Negeri 4 Denpasar", category:"Kreatif", status:"Aktif", programs:[], matchM2ir:55, matchM2it:60 },
+        { id:7, name:"Hendra Wijaya", email:"hendra.wijaya@president.ac.id", address:"Jl. Pemuda No. 19, Medan", school:"President University", category:"Sosial", status:"Aktif", programs:["m2ir"], matchM2ir:95, matchM2it:40 },
+        { id:8, name:"Anisa Rahma", email:"anisa.rahma@president.ac.id", address:"Jl. Veteran No. 77, Makassar", school:"SMA Negeri 1 Makassar", category:"Praktik", status:"Aktif", programs:["m2it"], matchM2ir:35, matchM2it:82 },
+        { id:9, name:"Fajar Maulana", email:"fajar.maulana@president.ac.id", address:"Jl. Teuku Umar No. 41, Palembang", school:"SMA Negeri 3 Palembang", category:"Sosial", status:"Nonaktif", programs:["m2ir"], matchM2ir:78, matchM2it:50 },
+        { id:10, name:"Rina Kartika", email:"rina.kartika@president.ac.id", address:"Jl. Imam Bonjol No. 15, Malang", school:"SMA Negeri 1 Malang", category:"Kreatif", status:"Aktif", programs:["m2ir","m2it"], matchM2ir:70, matchM2it:88 },
+        { id:11, name:"Yusuf Ibrahim", email:"yusuf.ibrahim@president.ac.id", address:"Jl. Pahlawan No. 90, Bekasi", school:"President University", category:"Analisis", status:"Aktif", programs:["m2it"], matchM2ir:42, matchM2it:93 },
+        { id:12, name:"Maya Sari", email:"maya.sari@president.ac.id", address:"Jl. Kartini No. 22, Tangerang", school:"SMA Negeri 2 Tangerang", category:"Sosial", status:"Aktif", programs:["m2ir"], matchM2ir:85, matchM2it:48 },
+        { id:13, name:"Dimas Prayoga", email:"dimas.prayoga@president.ac.id", address:"Jl. Ki Hajar Dewantara No. 5, Depok", school:"SMA Negeri 1 Depok", category:"Praktik", status:"Aktif", programs:["m2it"], matchM2ir:28, matchM2it:76 },
+        { id:14, name:"Laila Fitriani", email:"laila.fitri@president.ac.id", address:"Jl. Cendana No. 33, Bogor", school:"SMA Negeri 3 Bogor", category:"Kreatif", status:"Nonaktif", programs:[], matchM2ir:60, matchM2it:55 },
+        { id:15, name:"Arif Hidayat", email:"arif.hidayat@president.ac.id", address:"Jl. Raya Kuta No. 18, Bali", school:"SMA Negeri 1 Badung", category:"Sosial", status:"Aktif", programs:["m2ir"], matchM2ir:91, matchM2it:38 },
+        { id:16, name:"Nadia Safitri", email:"nadia.safitri@president.ac.id", address:"Jl. Mawar No. 7, Solo", school:"President University", category:"Analisis", status:"Aktif", programs:["m2ir","m2it"], matchM2ir:75, matchM2it:80 },
+        { id:17, name:"Gilang Ramadhan", email:"gilang.ramadhan@president.ac.id", address:"Jl. Melati No. 44, Padang", school:"SMK Negeri 2 Padang", category:"Praktik", status:"Aktif", programs:["m2it"], matchM2ir:32, matchM2it:87 },
+        { id:18, name:"Indah Permatasari", email:"indah.permata@president.ac.id", address:"Jl. Kenanga No. 29, Pontianak", school:"SMA Negeri 2 Pontianak", category:"Kreatif", status:"Aktif", programs:["m2ir"], matchM2ir:82, matchM2it:44 },
+        { id:19, name:"Bagus Setiawan", email:"bagus.setia@president.ac.id", address:"Jl. Anggrek No. 61, Manado", school:"SMA Negeri 1 Manado", category:"Sosial", status:"Nonaktif", programs:["m2ir","m2it"], matchM2ir:89, matchM2it:68 },
+        { id:20, name:"Citra Amelia", email:"citra.amelia@president.ac.id", address:"Jl. Dahlia No. 13, Balikpapan", school:"President University", category:"Analisis", status:"Aktif", programs:["m2it"], matchM2ir:40, matchM2it:94 }
+    ];
+
+    var currentTab = 'general';
+    var currentPage = 1;
+    var rowsPerPage = 8;
+    var filteredData = userData.slice();
+    var mainChart = null;
+
+    /* ===== TAB SWITCHING ===== */
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('qaGeneral').className = 'qa-tab' + (tab === 'general' ? ' active-general' : '');
+        document.getElementById('qaM2ir').className = 'qa-tab' + (tab === 'm2ir' ? ' active-m2ir' : '');
+        document.getElementById('qaM2it').className = 'qa-tab' + (tab === 'm2it' ? ' active-m2it' : '');
+        var banner = document.getElementById('deptBanner');
+        banner.className = 'dept-banner animate-in ' + tab + '-banner';
+        if (tab === 'general') { document.getElementById('deptBannerTitle').textContent = 'Semua Program Studi'; document.getElementById('deptBannerDesc').textContent = 'Menampilkan data keseluruhan dari seluruh program dan kategori pengguna.'; }
+        else if (tab === 'm2ir') { document.getElementById('deptBannerTitle').textContent = 'M2IR — Hubungan Internasional'; document.getElementById('deptBannerDesc').textContent = 'Pengguna yang mendaftar dan mengisi form M2IR. Kategori Sosial memiliki kecocokan tertinggi.'; }
+        else { document.getElementById('deptBannerTitle').textContent = 'M2IT — Teknologi Informasi'; document.getElementById('deptBannerDesc').textContent = 'Pengguna yang mendaftar dan mengisi form M2IT. Kategori Analisis & Praktik memiliki kecocokan tertinggi.'; }
+        document.getElementById('tableSearch').value = '';
+        currentPage = 1;
+        updateAll();
+    }
+
+    function getTabData() {
+        if (currentTab === 'general') return userData.slice();
+        return userData.filter(function(u) { return u.programs.indexOf(currentTab) !== -1; });
+    }
+
+    function updateAll() {
+        var tabData = getTabData();
+        var query = document.getElementById('tableSearch').value.toLowerCase().trim();
+        filteredData = tabData.filter(function(u) {
+            return u.name.toLowerCase().indexOf(query) !== -1 || u.email.toLowerCase().indexOf(query) !== -1 || u.address.toLowerCase().indexOf(query) !== -1 || u.school.toLowerCase().indexOf(query) !== -1 || u.category.toLowerCase().indexOf(query) !== -1;
+        });
+        updateCounts(); renderStatCards(tabData); renderSideStats(tabData); renderChart(tabData); renderTable();
+    }
+
+    function updateCounts() {
+        document.getElementById('qaCountGeneral').textContent = userData.length;
+        document.getElementById('qaCountM2ir').textContent = userData.filter(function(u) { return u.programs.indexOf('m2ir') !== -1; }).length;
+        document.getElementById('qaCountM2it').textContent = userData.filter(function(u) { return u.programs.indexOf('m2it') !== -1; }).length;
+    }
+
+    /* ===== STAT CARDS ===== */
+    function renderStatCards(tabData) {
+        var grid = document.getElementById('statCardsGrid');
+        var total = tabData.length;
+        var aktif = tabData.filter(function(u) { return u.status === 'Aktif'; }).length;
+        var html = '';
+        if (currentTab === 'general') {
+            var m2irT = userData.filter(function(u) { return u.programs.indexOf('m2ir') !== -1; }).length;
+            var m2itT = userData.filter(function(u) { return u.programs.indexOf('m2it') !== -1; }).length;
+            html = '<div class="stat-card green animate-in" style="animation-delay:.1s"><div class="stat-icon green"><i class="fas fa-users"></i></div><div class="stat-value">' + total + '</div><div class="stat-label">Total Pengguna</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 12.5%</div></div>' +
+                '<div class="stat-card pink animate-in" style="animation-delay:.15s"><div class="stat-icon pink"><i class="fas fa-globe"></i></div><div class="stat-value">' + m2irT + '</div><div class="stat-label">Pendaftar M2IR</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 8.2%</div></div>' +
+                '<div class="stat-card purple animate-in" style="animation-delay:.2s"><div class="stat-icon purple"><i class="fas fa-industry"></i></div><div class="stat-value">' + m2itT + '</div><div class="stat-label">Pendaftar M2IT</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 5.7%</div></div>' +
+                '<div class="stat-card amber animate-in" style="animation-delay:.25s"><div class="stat-icon amber"><i class="fas fa-user-check"></i></div><div class="stat-value">' + aktif + '</div><div class="stat-label">Pengguna Aktif</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 3.1%</div></div>';
+        } else if (currentTab === 'm2ir') {
+            var avg = tabData.length > 0 ? Math.round(tabData.reduce(function(s, u) { return s + u.matchM2ir; }, 0) / tabData.length) : 0;
+            var high = tabData.filter(function(u) { return u.matchM2ir >= 80; }).length;
+            var sos = tabData.filter(function(u) { return u.category === 'Sosial'; }).length;
+            html = '<div class="stat-card pink animate-in" style="animation-delay:.1s"><div class="stat-icon pink"><i class="fas fa-globe"></i></div><div class="stat-value">' + total + '</div><div class="stat-label">Pendaftar M2IR</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 15.3%</div></div>' +
+                '<div class="stat-card green animate-in" style="animation-delay:.15s"><div class="stat-icon green"><i class="fas fa-bullseye"></i></div><div class="stat-value">' + avg + '%</div><div class="stat-label">Rata-rata Kecocokan</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 4.2%</div></div>' +
+                '<div class="stat-card amber animate-in" style="animation-delay:.2s"><div class="stat-icon amber"><i class="fas fa-star"></i></div><div class="stat-value">' + high + '</div><div class="stat-label">Cocok Tinggi (80%+)</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 10.8%</div></div>' +
+                '<div class="stat-card blue animate-in" style="animation-delay:.25s"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-value">' + sos + '</div><div class="stat-label">Kategori Sosial</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 6.1%</div></div>';
+        } else {
+            var avg2 = tabData.length > 0 ? Math.round(tabData.reduce(function(s, u) { return s + u.matchM2it; }, 0) / tabData.length) : 0;
+            var high2 = tabData.filter(function(u) { return u.matchM2it >= 80; }).length;
+            var anl = tabData.filter(function(u) { return u.category === 'Analisis' || u.category === 'Praktik'; }).length;
+            html = '<div class="stat-card purple animate-in" style="animation-delay:.1s"><div class="stat-icon purple"><i class="fas fa-industry"></i></div><div class="stat-value">' + total + '</div><div class="stat-label">Pendaftar M2IT</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 11.6%</div></div>' +
+                '<div class="stat-card green animate-in" style="animation-delay:.15s"><div class="stat-icon green"><i class="fas fa-bullseye"></i></div><div class="stat-value">' + avg2 + '%</div><div class="stat-label">Rata-rata Kecocokan</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 3.8%</div></div>' +
+                '<div class="stat-card amber animate-in" style="animation-delay:.2s"><div class="stat-icon amber"><i class="fas fa-star"></i></div><div class="stat-value">' + high2 + '</div><div class="stat-label">Cocok Tinggi (80%+)</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 7.5%</div></div>' +
+                '<div class="stat-card blue animate-in" style="animation-delay:.25s"><div class="stat-icon blue"><i class="fas fa-code"></i></div><div class="stat-value">' + anl + '</div><div class="stat-label">Analisis & Praktik</div><div class="stat-change up"><i class="fas fa-arrow-up" style="font-size:10px"></i> 5.4%</div></div>';
+        }
+        grid.innerHTML = html;
+    }
+
+    /* ===== SIDE STATS ===== */
+    function renderSideStats(tabData) {
+        var container = document.getElementById('sideStats');
+        var cats = ['Analisis', 'Kreatif', 'Praktik', 'Sosial'];
+        var catColors = { Analisis: ['#00e5a0', '#00b880'], Kreatif: ['#f59e0b', '#d97706'], Praktik: ['#38bdf8', '#0284c7'], Sosial: ['#f472b6', '#ec4899'] };
+        var total = tabData.length || 1;
+        var html = '';
+        cats.forEach(function(cat) {
+            var count = tabData.filter(function(u) { return u.category === cat; }).length;
+            var pct = Math.round((count / total) * 100);
+            var c = catColors[cat];
+            html += '<div class="stat-card" style="padding:18px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Kategori ' + cat + '</span><span style="font-size:22px;font-weight:700;color:' + c[0] + '">' + count + '</span></div><div class="match-bar"><div class="match-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + c[0] + ',' + c[1] + ')"></div></div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">' + pct + '% dari total</div></div>';
+        });
+        container.innerHTML = html;
+    }
+
+    /* ===== CHART ===== */
+    function renderChart(tabData) {
+        var cats = ['Analisis', 'Kreatif', 'Praktik', 'Sosial'];
+        var values = cats.map(function(cat) { return tabData.filter(function(u) { return u.category === cat; }).length; });
+        var chartColors = ['#00e5a0', '#f59e0b', '#38bdf8', '#f472b6'];
+        var accentColor = currentTab === 'm2ir' ? '#f472b6' : currentTab === 'm2it' ? '#a78bfa' : '#00e5a0';
+        document.getElementById('chartTitle').textContent = currentTab === 'general' ? 'Statistik Kategori' : 'Distribusi Kategori — ' + (currentTab === 'm2ir' ? 'M2IR' : 'M2IT');
+        document.getElementById('chartSubtitle').textContent = currentTab === 'general' ? 'Distribusi berdasarkan tipe pengguna' : 'Pengguna yang mendaftar di program ini';
+        var activeChartType = document.querySelector('.chart-tab.active');
+        var type = activeChartType ? activeChartType.getAttribute('data-type') : 'bar';
+        var ctx = document.getElementById('mainChart').getContext('2d');
+        if (mainChart) mainChart.destroy();
+        var dataset = { label:'Jumlah Pengguna', data:values, borderColor:type==='bar'?chartColors:accentColor, borderWidth:2, borderRadius:type==='bar'?8:0, tension:0.4, fill:type==='line', pointBackgroundColor:type==='bar'?chartColors:accentColor, pointBorderColor:type==='bar'?chartColors:accentColor, pointRadius:type==='line'?5:0, pointHoverRadius:type==='line'?8:0 };
+        if (type === 'bar') { dataset.backgroundColor = chartColors.map(function(c){return c+'33';}); dataset.hoverBackgroundColor = chartColors.map(function(c){return c+'66';}); }
+        else { dataset.backgroundColor = function(ctx2){var g=ctx2.chart.ctx.createLinearGradient(0,0,0,280);g.addColorStop(0,accentColor+'40');g.addColorStop(1,accentColor+'03');return g;}; }
+        mainChart = new Chart(ctx, { type:type, data:{labels:cats,datasets:[dataset]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161d2e',titleColor:'#e8ecf4',bodyColor:'#7a8ba7',borderColor:'#1e2a3f',borderWidth:1,padding:12,cornerRadius:8,displayColors:true,callbacks:{label:function(ctx2){return ' '+ctx2.parsed.y+' pengguna';}}}},scales:{x:{grid:{color:'rgba(30,42,63,0.5)',drawBorder:false},ticks:{color:'#7a8ba7',font:{family:'DM Sans',size:12}}},y:{grid:{color:'rgba(30,42,63,0.5)',drawBorder:false},ticks:{color:'#7a8ba7',font:{family:'DM Sans',size:12}},beginAtZero:true}},animation:{duration:800,easing:'easeOutQuart'}} });
+    }
+    document.querySelectorAll('.chart-tab').forEach(function(tab) { tab.addEventListener('click', function() { document.querySelectorAll('.chart-tab').forEach(function(t){t.classList.remove('active');}); tab.classList.add('active'); renderChart(getTabData()); }); });
+
+    /* ===== TABLE ===== */
+    function getCategoryBadge(cat) { var map = {'Analisis':'badge-green','Kreatif':'badge-amber','Praktik':'badge-blue','Sosial':'badge-pink'}; return '<span class="badge '+(map[cat]||'badge-green')+'">'+cat+'</span>'; }
+    function getProgramPills(programs) { if(programs.length===0) return '<span style="font-size:12px;color:var(--text-secondary)">—</span>'; return '<div class="program-pills">'+programs.map(function(p){var cls=p==='m2ir'?'background:var(--m2ir-dim);color:var(--m2ir)':'background:var(--m2it-dim);color:var(--m2it)';var label=p==='m2ir'?'M2IR':'M2IT';return '<span class="program-pill" style="'+cls+'">'+label+'</span>';}).join('')+'</div>'; }
+    function getMatchBar(user) { var score=currentTab==='m2it'?user.matchM2it:user.matchM2ir; var color=score>=80?'#00e5a0':score>=60?'#f59e0b':'#ef4444'; return '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;min-width:60px"><div style="width:'+score+'%;height:100%;background:'+color+';border-radius:3px;transition:width .6s ease"></div></div><span style="font-size:12px;font-weight:700;color:'+color+';min-width:32px">'+score+'%</span></div>'; }
+
+    function renderTable() {
+        var tbody = document.getElementById('userTableBody');
+        var start = (currentPage - 1) * rowsPerPage;
+        var end = Math.min(start + rowsPerPage, filteredData.length);
+        var pageData = filteredData.slice(start, end);
+        var html = '';
+        pageData.forEach(function(u, i) {
+            html += '<tr><td style="color:var(--text-secondary);font-weight:500">'+(start+i+1)+'</td><td><div class="user-cell"><img class="user-avatar" src="https://picsum.photos/seed/user'+u.id+'/40/40.jpg" alt="'+u.name+'"><div><div class="user-name">'+u.name+'</div><div class="user-email">'+u.email+'</div></div></div></td><td style="color:var(--text-secondary);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+u.address+'">'+u.address+'</td><td style="font-weight:500">'+u.school+'</td><td>'+getCategoryBadge(u.category)+'</td><td>'+getProgramPills(u.programs)+'</td><td>'+getMatchBar(u)+'</td><td><div style="display:flex;gap:6px"><button class="action-btn" title="Edit" onclick="editUser('+u.id+')"><i class="fas fa-pen"></i></button><button class="action-btn danger" title="Hapus" onclick="deleteUser('+u.id+')"><i class="fas fa-trash"></i></button></div></td></tr>';
+        });
+        tbody.innerHTML = html;
+        var total = filteredData.length;
+        document.getElementById('paginationInfo').textContent = total > 0 ? 'Menampilkan '+(start+1)+'-'+end+' dari '+total+' data' : 'Tidak ada data ditemukan';
+        var tabLabel = currentTab === 'general' ? 'Semua Pengguna' : currentTab === 'm2ir' ? 'Pendaftar M2IR' : 'Pendaftar M2IT';
+        document.getElementById('tableTitle').textContent = tabLabel;
+        document.getElementById('tableSubtitle').textContent = currentTab === 'general' ? 'Daftar lengkap nama, email, alamat, dan sekolah' : 'Daftar pengguna yang sudah mengisi form '+currentTab.toUpperCase();
+        renderPagination();
+    }
+
+    function renderPagination() {
+        var totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+        var container = document.getElementById('paginationBtns');
+        var html = '<button class="page-btn" onclick="goToPage('+(currentPage-1)+')"'+(currentPage===1?' disabled style="opacity:0.4;cursor:default"':'')+'><i class="fas fa-chevron-left" style="font-size:11px"></i></button>';
+        for (var i = 1; i <= totalPages; i++) { html += '<button class="page-btn'+(i===currentPage?' active':'')+'" onclick="goToPage('+i+')">'+i+'</button>'; }
+        html += '<button class="page-btn" onclick="goToPage('+(currentPage+1)+')"'+(currentPage===totalPages?' disabled style="opacity:0.4;cursor:default"':'')+'><i class="fas fa-chevron-right" style="font-size:11px"></i></button>';
+        container.innerHTML = html;
+    }
+
+    function goToPage(page) { var tp=Math.max(1,Math.ceil(filteredData.length/rowsPerPage)); if(page<1||page>tp)return; currentPage=page; renderTable(); }
+
+    document.getElementById('tableSearch').addEventListener('input', function() { currentPage = 1; updateAll(); });
+
+    /* ===== CRUD ===== */
+    function editUser(id) { var user=null; for(var i=0;i<userData.length;i++){if(userData[i].id===id){user=userData[i];break;}} if(!user)return; document.getElementById('inputName').value=user.name; document.getElementById('inputEmail').value=user.email; document.getElementById('inputAddress').value=user.address; document.getElementById('inputSchool').value=user.school; document.getElementById('inputCategory').value=user.category; document.getElementById('inputProgM2ir').checked=user.programs.indexOf('m2ir')!==-1; document.getElementById('inputProgM2it').checked=user.programs.indexOf('m2it')!==-1; document.getElementById('addUserModal').classList.add('show'); document.getElementById('addUserModal').setAttribute('data-edit-id',id); document.getElementById('modalTitle').textContent='Edit Pengguna'; document.getElementById('submitUser').textContent='Simpan Perubahan'; }
+    function deleteUser(id) { var idx=-1; for(var i=0;i<userData.length;i++){if(userData[i].id===id){idx=i;break;}} if(idx===-1)return; var name=userData[idx].name; userData.splice(idx,1); currentPage=1; updateAll(); showToast('Data '+name+' berhasil dihapus','error'); }
+
+    document.getElementById('addUserBtn').addEventListener('click', function() { resetForm(); document.getElementById('addUserModal').classList.add('show'); document.getElementById('modalTitle').textContent='Tambah Pengguna Baru'; document.getElementById('submitUser').textContent='Simpan Data'; });
+    document.getElementById('cancelModal').addEventListener('click', function() { document.getElementById('addUserModal').classList.remove('show'); });
+    document.getElementById('addUserModal').addEventListener('click', function(e) { if(e.target===document.getElementById('addUserModal')) document.getElementById('addUserModal').classList.remove('show'); });
+
+    function resetForm() { document.getElementById('inputName').value=''; document.getElementById('inputEmail').value=''; document.getElementById('inputAddress').value=''; document.getElementById('inputSchool').value=''; document.getElementById('inputCategory').value='Analisis'; document.getElementById('inputProgM2ir').checked=false; document.getElementById('inputProgM2it').checked=false; document.getElementById('addUserModal').removeAttribute('data-edit-id'); }
+
+    document.getElementById('submitUser').addEventListener('click', function() {
+        var name=document.getElementById('inputName').value.trim(); var email=document.getElementById('inputEmail').value.trim(); var address=document.getElementById('inputAddress').value.trim(); var school=document.getElementById('inputSchool').value.trim(); var category=document.getElementById('inputCategory').value; var progM2ir=document.getElementById('inputProgM2ir').checked; var progM2it=document.getElementById('inputProgM2it').checked;
+        if(!name||!email||!address||!school){showToast('Semua field harus diisi!','error');return;}
+        var programs=[]; if(progM2ir)programs.push('m2ir'); if(progM2it)programs.push('m2it');
+        var editId=document.getElementById('addUserModal').getAttribute('data-edit-id');
+        if(editId){for(var i=0;i<userData.length;i++){if(userData[i].id===parseInt(editId)){userData[i].name=name;userData[i].email=email;userData[i].address=address;userData[i].school=school;userData[i].category=category;userData[i].programs=programs;break;}} showToast('Data '+name+' berhasil diperbarui','success');}
+        else{var maxId=0;for(var j=0;j<userData.length;j++){if(userData[j].id>maxId)maxId=userData[j].id;} userData.push({id:maxId+1,name:name,email:email,address:address,school:school,category:category,status:'Aktif',programs:programs,matchM2ir:Math.floor(Math.random()*40)+50,matchM2it:Math.floor(Math.random()*40)+50}); showToast('Pengguna '+name+' berhasil ditambahkan','success');}
+        document.getElementById('addUserModal').classList.remove('show'); resetForm(); updateAll();
+    });
+
+    /* ===== TOAST ===== */
+    function showToast(message, type) { var container=document.getElementById('toastContainer'); var toast=document.createElement('div'); toast.className='toast '+type; var icon=type==='success'?'fa-check-circle':'fa-exclamation-circle'; toast.innerHTML='<i class="fas '+icon+'"></i> '+message; container.appendChild(toast); setTimeout(function(){if(toast.parentNode)toast.parentNode.removeChild(toast);},3000); }
+
+    /* ===== EXPORT ===== */
+    document.getElementById('exportTableCSV').addEventListener('click', function() { var headers=['No','Nama','Email','Alamat','Sekolah','Kategori','Program','Cocok '+(currentTab==='m2it'?'M2IT':'M2IR')]; var rows=filteredData.map(function(u,i){var match=currentTab==='m2it'?u.matchM2it:u.matchM2ir; return [i+1,u.name,u.email,u.address,u.school,u.category,u.programs.join(', '),match+'%'];}); var csv=headers.join(',')+'\n'; rows.forEach(function(r){csv+=r.map(function(v){return '"'+v+'"';}).join(',')+'\n';}); downloadCSV(csv,'data_'+currentTab+'_presuniv.csv'); showToast('File CSV berhasil diunduh','success'); });
+    document.getElementById('exportChartCSV').addEventListener('click', function() { var csv='Kategori,Jumlah\n'; var tabData=getTabData(); ['Analisis','Kreatif','Praktik','Sosial'].forEach(function(cat){csv+='"'+cat+'",'+tabData.filter(function(u){return u.category===cat;}).length+'\n';}); downloadCSV(csv,'chart_'+currentTab+'.csv'); showToast('Chart CSV berhasil diunduh','success'); });
+    function downloadCSV(content, filename) { var blob=new Blob([content],{type:'text/csv;charset=utf-8;'}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); }
+
+    /* ===== SIDEBAR ===== */
+    document.getElementById('hamburgerBtn').addEventListener('click', function() { document.getElementById('sidebar').classList.toggle('open'); });
+    document.addEventListener('click', function(e) { var sidebar=document.getElementById('sidebar'); var hamburger=document.getElementById('hamburgerBtn'); if(window.innerWidth<=1024&&!sidebar.contains(e.target)&&!hamburger.contains(e.target)) sidebar.classList.remove('open'); });
+    document.querySelectorAll('.nav-item').forEach(function(item) { item.addEventListener('click', function() { document.querySelectorAll('.nav-item').forEach(function(i){i.classList.remove('active');}); item.classList.add('active'); }); });
+
+    /* ===== RESPONSIVE ===== */
+    function handleResponsiveGrid() { var grid=document.querySelector('.chart-grid'); if(!grid)return; grid.style.gridTemplateColumns=window.innerWidth<=900?'1fr':'1fr 340px'; }
+    window.addEventListener('resize', handleResponsiveGrid);
+
+    /* ===== FIRESTORE READ (M2IR/M2IT) ===== */
+    // NOTE: ini contoh client-side. Untuk produksi, gunakan security rules yang ketat.
+    const submissionsUnsubscribers = [];
+
+    // Tambahkan di window agar bisa dibaca oleh initFirestoreRead()
+    // Isi firebase config milik project kamu.
+    // Catatan: Ini hanya untuk dev demo.
+    window.__FIREBASE_ADMIN_CONFIG__ = window.__FIREBASE_ADMIN_CONFIG__ || {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    async function initFirestoreRead(){
+        // Firestore credentials/config di-hardcode (harus diisi dulu di file ini)
+        // Jika belum diisi, admin dashboard tetap menampilkan dummy data.
+        try {
+            if(!window.__FIREBASE_ADMIN_CONFIG__) {
+                return; // config belum diset
+            }
+
+            // Import Firebase (ESM)
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js');
+            const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js');
+            const { getFirestore, collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js');
+
+            const app = initializeApp(window.__FIREBASE_ADMIN_CONFIG__);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            // Optional: admin perlu login Google juga (security via rules)
+            onAuthStateChanged(auth, (user) => {
+                if(!user) return; // read akan gagal bila rules menolak
+            });
+
+            // Live read M2IR
+            const colRef = collection(db, 'submissions');
+            const qM2ir = query(colRef, where('role','==','M2IR'));
+            const unsub1 = onSnapshot(qM2ir, (snap) => {
+                const docs = [];
+                snap.forEach(d => docs.push(d.data()));
+                mergeFirestoreDocs('m2ir', docs);
+            });
+            submissionsUnsubscribers.push(unsub1);
+
+            // Live read M2IT
+            const qM2it = query(colRef, where('role','==','M2IT'));
+            const unsub2 = onSnapshot(qM2it, (snap) => {
+                const docs = [];
+                snap.forEach(d => docs.push(d.data()));
+                mergeFirestoreDocs('m2it', docs);
+            });
+            submissionsUnsubscribers.push(unsub2);
+        } catch (e) {
+            console.warn('Firestore read disabled (config/SDK error):', e);
+        }
+    }
+
+    function mergeFirestoreDocs(program, docs){
+        // program: 'm2ir' | 'm2it'
+        // dokumen minimal: email, points, role, recommendationResult, latestSubmission
+        // Kita mapping ke struktur tabel dummy yang sudah ada di index.html.
+        const idBase = program === 'm2ir' ? 10000 : 20000;
+
+        // Buat map existing by email (agar update konsisten)
+        const byEmail = {};
+        userData.forEach(u => { byEmail[u.email] = u; });
+
+        docs.forEach((doc, idx) => {
+            const email = doc.email || 'unknown_'+idx+'@local';
+            const points = Number(doc.points ?? 0);
+            const role = doc.role || (program === 'm2ir' ? 'M2IR' : 'M2IT');
+            const latest = doc.latestSubmission && doc.latestSubmission.toDate ? doc.latestSubmission.toDate() : new Date();
+
+            if(byEmail[email]){
+                const u = byEmail[email];
+                // Update fields
+                u.status = 'Aktif';
+                if(!u.programs.includes(program)) u.programs.push(program);
+                if(program === 'm2ir') u.matchM2ir = points;
+                if(program === 'm2it') u.matchM2it = points;
+                u.category = role === 'M2IR' ? 'Sosial' : 'Analisis';
+                u.latestSubmission = latest;
+            } else {
+                const newUserId = idBase + idx + 1;
+                const newUser = {
+                    id: newUserId,
+                    name: (email.split('@')[0] || 'User').replace(/[._-]+/g,' ').replace(/\b\w/g, c=>c.toUpperCase()),
+                    email,
+                    address: '-',
+                    school: '—',
+                    category: role === 'M2IR' ? 'Sosial' : 'Analisis',
+                    status: 'Aktif',
+                    programs: program === 'm2ir' ? ['m2ir'] : ['m2it'],
+                    matchM2ir: program === 'm2ir' ? points : 0,
+                    matchM2it: program === 'm2it' ? points : 0,
+                    latestSubmission: latest
+                };
+                userData.push(newUser);
+                byEmail[email] = newUser;
+            }
+        });
+
+        // refresh current view
+        updateCounts();
+        updateAll();
+    }
+
+    /* ===== INIT ===== */
+    function initDashboard() {
+        updateCounts();
+        switchTab('general');
+        handleResponsiveGrid();
+        initFirestoreRead();
+    }
+</script>
+</body>
+</html>

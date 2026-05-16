@@ -1,0 +1,4 @@
+Contoh URL untuk QR (token):
+
+mindtomajor.html?token=demo-token-001
+
